@@ -73,8 +73,12 @@ function install_tor() {
 }
 
 function configure_tor() {
-    echo "== Copying Torrc"
-    cp $PWD/etc/tor/torrc /etc/tor/torrc
+    TEMPLATE=$1
+    NB_INSTANCES=$1
+    echo "== Configuring Tor"
+
+    create_instances $TEMPLATE $NB_INSTANCES
+
     service tor restart
     echo "== Waiting for Tor Socks5 service to be ready"
     while ! echo -e 'PROTOCOLINFO\r\n' | nc 127.0.0.1 9050  | grep -qa tor; do
@@ -85,28 +89,30 @@ function configure_tor() {
 
 # create tor instance
 function create_instance() {
-    instance=$1
-    tor-instance-create $instance
+    TEMPLATE=$1
+    instance=$2
+    INSTANCE_NAME="${TEMPLATE}${instance}"
+    echo "== Creating Tor Instance ${INSTANCE_NAME}"
+    tor-instance-create $INSTANCE_NAME
+    cp $PWD/etc/tor/torrc.$TEMPLATE /etc/tor/instances/$INSTANCE_NAME/torrc
+    instance_rules $instance
 }
 
 # create one or more tor instances
 function create_instances() {
-    instance=0
-    more=1
-    while [ $more == 1 ]; do
+    TEMPLATE=$1
+    NB_INSTANCES=$2
+    instance=1
+    while [ $instance -le $NB_INSTANCES ]; do
 	create_instance $instance
-	echo "Would you like to create another instance? [N/y/?]"
-	read response
-	if [ $response != "y" ]; then
-	    more=0
-	else
-	    instance=$((instance+1))
-	fi
+	instance=$((instance+1))
     done
 }
 
 # create firewall rule for a single instance
 function instance_rules() {
+    return
+    #TODO: handle ipv6
     instance=$1
     # insert rules after ## allow Tor ORPort, DirPort
     orport=$((instance+9001))
@@ -118,6 +124,8 @@ function instance_rules() {
 
 # configure firewall rules
 function configure_firewall() {
+    #TODO: handle NB_INSTANCES
+    NB_INSTANCES=$1
     echo "== Configuring firewall rules"
     apt-get install -y debconf-utils iptables iptables-persistent
     echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
@@ -240,13 +248,38 @@ function print_final() {
     echo "== REBOOT THIS SERVER"
 }
 
+TEMPLATE="proxy"
+MULTIPLE_INSTANCES=1
+while getopts "t:m:h" opt; do
+    case ${opt} in
+	h )
+	    echo "Usage:"
+	    echo "    -h                      Display this help message."
+	    echo "    -t TEMPLATE             Select TEMPLATE [proxy|relay|exit|bridge] to use."
+	    echo "    -m %d                   Configure multiple instances."
+	    exit 0
+	    ;;
+	t )
+	    TEMPLATE=$OPTARG
+	    ;;
+	m )
+	    NB_INSTANCES=$OPTARG
+	    ;;
+	\? )
+	    echo "Invalid Option: -$OPTARG" 1>&2
+	    exit 1
+	    ;;
+    esac
+done
+shift $((OPTIND -1))
+
 check_root
 suggest_user 
 update_software
 add_sources
 install_tor
-configure_tor
-configure_firewall
+configure_tor $TEMPLATE $NB_INSTANCES
+configure_firewall $NB_INSTANCES
 install_f2b
 auto_update
 install_aa
