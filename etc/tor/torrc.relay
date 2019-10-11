@@ -11,8 +11,8 @@
 #MyFamily $keyid,$keyid,...
 
 
-#ORPort 9001
-#DirPort 9030
+ORPort 9001
+DirPort 9030
 SocksPort 9050
 
 #RelayBandwidthRate 30 MBytes
