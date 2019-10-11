@@ -2,16 +2,13 @@
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
 :OUTPUT ACCEPT [0:0]
+:fail2ban-ssh -
 
 ##  Allows all loopback (lo0) traffic and drop all traffic to 127/8 that doesn't use lo0
 -A INPUT -i lo -j ACCEPT
 
 ## allow incoming SSH
 -A INPUT -p tcp -m state --state NEW --dport 22 -j ACCEPT
-
-## allow Tor ORPort, DirPort
--A INPUT -p tcp --dport 9001 -j ACCEPT
--A INPUT -p tcp --dport 9030 -j ACCEPT
 
 ## ratelimit ICMP echo, allow all others
 -A INPUT -p ipv6-icmp --icmpv6-type echo-request -m limit --limit 2/s -j ACCEPT
@@ -23,5 +20,9 @@
 
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -m state --state INVALID -j DROP
+
+-A fail2ban-ssh -j RETURN
+
+## allow Tor ORPort, DirPort
 
 COMMIT

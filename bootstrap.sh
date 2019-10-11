@@ -94,19 +94,24 @@ function configure_tor() {
 function create_instance() {
     TEMPLATE=$1
     instance=$2
-    INSTANCE_NAME="${TEMPLATE}${instance}"
+    INSTANCE_NAME="${TEMPLATE}$((instance+1))"
     echo "== Creating Tor Instance ${INSTANCE_NAME}"
     tor-instance-create $INSTANCE_NAME
     cp $PWD/etc/tor/torrc.$TEMPLATE /etc/tor/instances/$INSTANCE_NAME/torrc
-    instance_rules $instance
+    orport=$((instance+9001))
+    dirport=$((instance+9030))
+    socksport=$((instance+9050))
+    sed -i "s/ORPort .*/ORPort ${orport}/" /etc/tor/instances/$INSTANCE_NAME/torrc
+    sed -i "s/DirPort .*/DirPort ${dirport}/" /etc/tor/instances/$INSTANCE_NAME/torrc
+    sed -i "s/SocksPort .*/SocksPort ${socksport}/" /etc/tor/instances/$INSTANCE_NAME/torrc
 }
 
 # create one or more tor instances
 function create_instances() {
     TEMPLATE=$1
     NB_INSTANCES=$2
-    instance=1
-    while [ $instance -le $NB_INSTANCES ]; do
+    instance=0
+    while [ $instance -lt $NB_INSTANCES ]; do
 	create_instance $TEMPLATE $instance
 	instance=$((instance+1))
     done
@@ -140,7 +145,21 @@ function configure_firewall() {
     echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
     cp $PWD/etc/iptables/rules.v4 /etc/iptables/rules.v4
     cp $PWD/etc/iptables/rules.v6 /etc/iptables/rules.v6
+    #remove the COMMIT command from templates
+    sed -i '/COMMIT/d' /etc/iptables/rule.v4 /etc/iptables/rule.v6
     # for each instance call instance_rules
+    instance=0
+    while [ $instance -lt $NB_INSTANCES ]; do
+	orport=$((instance+9001))
+	dirport=$((instance+9030))
+	echo "-A INPUT -p tcp --dport $orport -j ACCEPT \
+	      -A INPUT -p tcp --dport $dirport -j ACCEPT" >> /etc/iptables/rule.v4
+	echo "-A INPUT -p tcp --dport $orport -j ACCEPT \
+	      -A INPUT -p tcp --dport $dirport -j ACCEPT" >> /etc/iptables/rule.v6
+    done
+    #re-add the COMMIT command at the end of config files
+    echo "COMMIT" >> /etc/iptables/rule.v4
+    echo "COMMIT" >> /etc/iptables/rule.v6
     chmod 600 /etc/iptables/rules.v4
     chmod 600 /etc/iptables/rules.v6
     iptables-restore < /etc/iptables/rules.v4
