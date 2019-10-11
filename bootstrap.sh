@@ -35,7 +35,7 @@ function suggest_user () {
     fi
 }
 
-# install mandatory packages for add_tor_sources
+# install mandatory packages used in add_tor_sources
 function install_requirements() {
     echo "== Updating software"
     apt-get update
@@ -327,24 +327,112 @@ function print_final() {
     echo "== REBOOT THIS SERVER"
 }
 
+function register_install_toronly() {
+    register_install_tor
+}
+
+function configure_toronly() {
+    NB_INSTANCES=$1
+    return
+}
+
+function register_install_minimal() {
+    register_install_toronly
+    register_install_f2b
+    register_install_auto_update
+    register_install_aa
+    register_install_ntp
+    register_install_sshd
+}
+
+function configure_minimal() {
+    NB_INSTANCES=$1
+    configure_toronly $NB_INSTANCES
+
+    configure_f2b
+    configure_auto_update
+    configure_aa
+    configure_ntp
+    configure_sshd
+}
+
+function register_install_standard() {
+    register_install_minimal
+
+    register_install_tor
+    register_install_firewall
+    register_install_f2b
+    register_install_auto_update
+    register_install_aa
+    register_install_ntp
+    register_install_sshd
+    register_install_unbound
+}
+
+function configure_standard() {
+    NB_INSTANCES=$1
+
+    configure_minimal $NB_INSTANCES
+
+    configure_firewall $NB_INSTANCES
+    configure_f2b
+    configure_auto_update
+    configure_aa
+    configure_ntp
+    configure_sshd
+    configure_unbound
+}
+
+function register_install_full() {
+    register_install_standard
+
+    register_install_tor_arm
+    register_install_monit
+    register_install_pip
+}
+
+function configure_full() {
+    NB_INSTANCES=$1
+    configure_standard $NB_INSTANCES
+
+    configure_tor_arm
+    configure_monit
+    pip_install_nyx
+}
+
+function standard_procedure() {
+    TEMPLATE=$1
+    NB_INSTANCES=$2
+
+    install_packages
+    stop_services
+    configure_tor $TEMPLATE $NB_INSTANCES
+    apt-get update #Reupdate packages with Tor network repos
+}
+
 TEMPLATE="proxy"
 NB_INSTANCES=1
-while getopts "t:m:h" opt; do
+INSTALL=""
+while getopts "t:m:i:h" opt; do
     case ${opt} in
-	h )
+	h)
 	    echo "Usage:"
 	    echo "    -h                      Display this help message."
 	    echo "    -t TEMPLATE             Select TEMPLATE [proxy|relay|exit|bridge] to use."
+	    echo "    -i INSTALL              Select INSTALL [toronly|minimal|standard|full] profile."
 	    echo "    -m %d                   Configure multiple instances."
 	    exit 0
 	    ;;
-	t )
+	t)
 	    TEMPLATE=$OPTARG
 	    ;;
-	m )
+	m)
 	    NB_INSTANCES=$OPTARG
 	    ;;
-	\? )
+	i)
+	    INSTALL=$OPTARG
+	    ;;
+	*)
 	    echo "Invalid Option: -$OPTARG" 1>&2
 	    exit 1
 	    ;;
@@ -352,39 +440,45 @@ while getopts "t:m:h" opt; do
 done
 shift $((OPTIND -1))
 
+if [ -z "$INSTALL" ]; then
+    echo "Error: INSTALL option is mandatory"
+    exit 1
+fi
+
 check_root
 suggest_user 
 install_requirements
 add_tor_sources
 
-register_install_tor
-register_install_firewall
-register_install_f2b
-register_install_auto_update
-register_install_aa
-register_install_ntp
-register_install_sshd
-register_install_unbound
-register_install_tor_arm
-register_install_monit
-register_install_pip
+case "$INSTALL" in
+    toronly)
+	register_install_toronly
+	standard_procedure $TEMPLATE $NB_INSTANCES
+	configure_toronly $NB_INSTANCES
+	;;
 
-install_packages
-stop_services
+    minimal)
+	register_install_minimal
+	standard_procedure $TEMPLATE $NB_INSTANCES
+	configure_minimal $NB_INSTANCES
+	;;
 
-configure_tor $TEMPLATE $NB_INSTANCES
-apt-get update #Reupdate packages with Tor network repos
+    standard)
+	register_install_standard
+	standard_procedure $TEMPLATE $NB_INSTANCES
+	configure_standard $NB_INSTANCES
+	;;
+    full)
+	register_install_full
+	standard_procedure $TEMPLATE $NB_INSTANCES
+	configure_full $NB_INSTANCES
+	;;
+    *)
+        echo "Invalid Install: -$OPTARG" 1>&2
+        exit 1
+        ;;
 
-configure_firewall $NB_INSTANCES
-configure_f2b
-configure_auto_update
-configure_aa
-configure_ntp
-configure_sshd
-configure_unbound
-configure_tor_arm
-configure_monit
-pip_install_nyx
+esac
 
 restart_services
 
