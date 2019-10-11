@@ -117,19 +117,6 @@ function create_instances() {
     done
 }
 
-# create firewall rule for a single instance
-function instance_rules() {
-    return
-    #TODO: handle ipv6
-    instance=$1
-    # insert rules after ## allow Tor ORPort, DirPort
-    orport=$((instance+9001))
-    dirport=$((instance+9030))
-    sed -i "/## allow Tor ORPort, DirPort/ \
-            -A INPUT -p tcp --dport $orport -j ACCEPT \
-	    -A INPUT -p tcp --dport $dirport -j ACCEPT" /etc/iptables/rule.v4
-}
-
 function register_install_firewall() {
     echo "== Installing firewall"
     INSTALL_PACKAGES+=("debconf-utils")
