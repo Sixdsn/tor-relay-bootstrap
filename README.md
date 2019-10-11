@@ -26,3 +26,14 @@ sudo apt install -y git
 git clone https://github.com/Sixdsn/tor-relay-bootstrap.git
 sudo ./bootstrap.sh
 ```
+
+New featues:
+ * cmdline options:
+  + Template to specify a type of relay to configure[proxy|relay|exit|bridge]
+  + Install to specify which softwares you want to install and configure [toronly|minimal|standard|full]
+  + Number of Tor instances to configure at start (max of 2 is recommended)
+ 
+ 
+ * does only apt-get twice, onmce for requirements and the second one with all packages to install
+ * configures dynamically iptables ports for multiple instances
+ * fixes most of issues reported in the original fork
