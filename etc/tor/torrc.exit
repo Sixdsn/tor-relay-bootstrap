@@ -11,8 +11,8 @@
 #MyFamily $keyid,$keyid,...
 
 
-#ORPort 9001
-#DirPort 9030
+ORPort 9001
+DirPort 9030
 SocksPort 9050
 
 #RelayBandwidthRate 30 MBytes
@@ -20,4 +20,7 @@ SocksPort 9050
 #AccountingMax 32 GB
 #AccountingStart day 00:00
 
+ExitPolicy accept *:53        # DNS
+ExitPolicy accept *:80        # HTTP
+ExitPolicy accept *:443       # HTTPS
 ExitPolicy reject *:*
