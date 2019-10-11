@@ -104,6 +104,9 @@ function create_instance() {
     sed -i "s/ORPort .*/ORPort ${orport}/" /etc/tor/instances/$INSTANCE_NAME/torrc
     sed -i "s/DirPort .*/DirPort ${dirport}/" /etc/tor/instances/$INSTANCE_NAME/torrc
     sed -i "s/SocksPort .*/SocksPort ${socksport}/" /etc/tor/instances/$INSTANCE_NAME/torrc
+    systemctl enable tor@${INSTANCE_NAME}
+    systemctl start tor@${INSTANCE_NAME}
+    systemctl mask tor@default
 }
 
 # create one or more tor instances
@@ -133,20 +136,21 @@ function configure_firewall() {
     cp $PWD/etc/iptables/rules.v4 /etc/iptables/rules.v4
     cp $PWD/etc/iptables/rules.v6 /etc/iptables/rules.v6
     #remove the COMMIT command from templates
-    sed -i '/COMMIT/d' /etc/iptables/rule.v4 /etc/iptables/rule.v6
+    sed -i '/COMMIT/d' /etc/iptables/rules.v4 /etc/iptables/rules.v6
     # for each instance call instance_rules
     instance=0
     while [ $instance -lt $NB_INSTANCES ]; do
 	orport=$((instance+9001))
 	dirport=$((instance+9030))
-	echo "-A INPUT -p tcp --dport $orport -j ACCEPT \
-	      -A INPUT -p tcp --dport $dirport -j ACCEPT" >> /etc/iptables/rule.v4
-	echo "-A INPUT -p tcp --dport $orport -j ACCEPT \
-	      -A INPUT -p tcp --dport $dirport -j ACCEPT" >> /etc/iptables/rule.v6
+	echo "-A INPUT -p tcp --dport $orport -j ACCEPT" >> /etc/iptables/rules.v4
+	echo "-A INPUT -p tcp --dport $dirport -j ACCEPT" >> /etc/iptables/rules.v4
+	echo "-A INPUT -p tcp --dport $orport -j ACCEPT" >> /etc/iptables/rules.v6
+	echo "-A INPUT -p tcp --dport $dirport -j ACCEPT" >> /etc/iptables/rules.v6
+	instance=$((instance+1))
     done
     #re-add the COMMIT command at the end of config files
-    echo "COMMIT" >> /etc/iptables/rule.v4
-    echo "COMMIT" >> /etc/iptables/rule.v6
+    echo "COMMIT" >> /etc/iptables/rules.v4
+    echo "COMMIT" >> /etc/iptables/rules.v6
     chmod 600 /etc/iptables/rules.v4
     chmod 600 /etc/iptables/rules.v6
     iptables-restore < /etc/iptables/rules.v4
@@ -344,11 +348,9 @@ function configure_toronly() {
 
 function register_install_minimal() {
     register_install_toronly
+
     register_install_f2b
-    register_install_auto_update
-    register_install_aa
-    register_install_ntp
-    register_install_sshd
+    register_install_firewall
 }
 
 function configure_minimal() {
@@ -356,18 +358,12 @@ function configure_minimal() {
     configure_toronly $NB_INSTANCES
 
     configure_f2b
-    configure_auto_update
-    configure_aa
-    configure_ntp
-    configure_sshd
+    configure_firewall $NB_INSTANCES
 }
 
 function register_install_standard() {
     register_install_minimal
 
-    register_install_tor
-    register_install_firewall
-    register_install_f2b
     register_install_auto_update
     register_install_aa
     register_install_ntp
@@ -380,8 +376,6 @@ function configure_standard() {
 
     configure_minimal $NB_INSTANCES
 
-    configure_firewall $NB_INSTANCES
-    configure_f2b
     configure_auto_update
     configure_aa
     configure_ntp
