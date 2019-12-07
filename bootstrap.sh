@@ -431,6 +431,13 @@ function standard_procedure() {
     apt-get update #Reupdate packages with Tor network repos
 }
 
+function postinst_script() {
+    POSTINST_SCRIPT=$1
+
+    echo "== Running PostInst Script ${POSTINST_SCRIPT}"
+    $POSTINST_SCRIPT
+}
+
 function configure_full_cleanup() {
     uninstall_requirements
     remove_tor_sources
@@ -456,7 +463,6 @@ function standard_procedure_cleanup() {
 }
 
 
-
 TEMPLATE="proxy"
 NB_INSTANCES=1
 INSTALL=""
@@ -468,6 +474,7 @@ while getopts "t:m:i:h" opt; do
 	    echo "    -t TEMPLATE             Select TEMPLATE [proxy|relay|exit|bridge] to use."
 	    echo "    -i INSTALL              Select INSTALL [toronly|minimal|standard|full|cleanup] profile."
 	    echo "    -m %d                   Configure multiple instances."
+	    echo "    -p POSTINST_SCRIPT      Call a post installation script."
 	    exit 0
 	    ;;
 	t)
@@ -478,6 +485,9 @@ while getopts "t:m:i:h" opt; do
 	    ;;
 	i)
 	    INSTALL=$OPTARG
+	    ;;
+	p)
+	    POSTINST_SCRIPT=$OPTARG
 	    ;;
 	*)
 	    echo "Invalid Option: -$OPTARG" 1>&2
@@ -502,6 +512,7 @@ case "$INSTALL" in
 	register_install_toronly
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_toronly $NB_INSTANCES
+	postinst_script	$POSTINST_SCRIPT
 	;;
 
     minimal)
@@ -510,6 +521,7 @@ case "$INSTALL" in
 	register_install_minimal
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_minimal $NB_INSTANCES
+	postinst_script	$POSTINST_SCRIPT
 	;;
 
     standard)
@@ -518,6 +530,7 @@ case "$INSTALL" in
 	register_install_standard
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_standard $NB_INSTANCES
+	postinst_script	$POSTINST_SCRIPT
 	;;
     full)
 	install_requirements
@@ -525,6 +538,7 @@ case "$INSTALL" in
 	register_install_full
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_full $NB_INSTANCES
+	postinst_script	$POSTINST_SCRIPT
 	;;
     cleanup)
 	register_install_full
