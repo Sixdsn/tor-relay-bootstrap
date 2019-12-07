@@ -13,6 +13,7 @@ set -e
 
 INSTALL_PACKAGES=()
 STOP_SERVICES=()
+APT_SOURCES_FILE="/etc/apt/sources.list.d/torproject.list"
 
 # check for root
 function check_root () {
@@ -42,13 +43,17 @@ function install_requirements() {
     apt-get install -y lsb-release apt-transport-tor gpg dirmngr curl
 }
 
+function uninstall_requirements() {
+    echo "== Removing software"
+    apt-get remove --purge -y lsb-release apt-transport-tor gpg dirmngr curl
+}
+
 # add official Tor repository and Debian onion service mirrors
 function add_tor_sources() {
-    APT_SOURCES_FILE="/etc/apt/sources.list.d/torproject.list"
     DISTRO=$(lsb_release -si)
     SID=$(lsb_release -cs)
     if [ "$DISTRO" == "Debian" -o "$DISTRO"=="Ubuntu" ]; then
-	echo "== Removing previous sources"
+	echo "== Removing previous Tor sources"
 	rm -f $APT_SOURCES_FILE
 	echo "== Adding the official Tor repository"
 	echo "deb tor+http://sdscoq7snqtznauu.onion/torproject.org `lsb_release -cs` main" >> $APT_SOURCES_FILE
@@ -66,6 +71,11 @@ function add_tor_sources() {
 	echo "You do not appear to be running Debian or Ubuntu"
 	exit 1
     fi
+}
+
+function remove_tor_sources() {
+    echo "== Removing previous Tor sources"
+    rm -f $APT_SOURCES_FILE
 }
 
 # install tor
@@ -304,6 +314,10 @@ function install_packages() {
     apt-get install -y "${INSTALL_PACKAGES[@]}"
 }
 
+function uninstall_packages() {
+    apt-get remove --purge -y "${INSTALL_PACKAGES[@]}"
+}
+
 function stop_services() {
     for i in "${STOP_SERVICES[@]}"
     do
@@ -410,6 +424,18 @@ function standard_procedure() {
     apt-get update #Reupdate packages with Tor network repos
 }
 
+function configure_full_cleanup() {
+    uninstall_requirements
+    remove_tor_sources
+}
+
+function standard_procedure_cleanup() {
+    uninstall_packages
+    stop_services
+}
+
+
+
 TEMPLATE="proxy"
 NB_INSTANCES=1
 INSTALL=""
@@ -419,7 +445,7 @@ while getopts "t:m:i:h" opt; do
 	    echo "Usage:"
 	    echo "    -h                      Display this help message."
 	    echo "    -t TEMPLATE             Select TEMPLATE [proxy|relay|exit|bridge] to use."
-	    echo "    -i INSTALL              Select INSTALL [toronly|minimal|standard|full] profile."
+	    echo "    -i INSTALL              Select INSTALL [toronly|minimal|standard|full|cleanup] profile."
 	    echo "    -m %d                   Configure multiple instances."
 	    exit 0
 	    ;;
@@ -473,6 +499,11 @@ case "$INSTALL" in
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_full $NB_INSTANCES
 	;;
+    cleanup)
+	register_install_full
+	standard_procedure_cleanup
+	configure_cleanup
+	exit 0
     *)
         echo "Invalid Install: -$OPTARG" 1>&2
         exit 1
