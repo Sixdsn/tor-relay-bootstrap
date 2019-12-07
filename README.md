@@ -32,6 +32,8 @@ New featues:
   + Template to specify a type of relay to configure[proxy|relay|exit|bridge]
   + Install to specify which softwares you want to install and configure [toronly|minimal|standard|full]
   + Number of Tor instances to configure at start (max of 2 is recommended)
+  + Post Install script
+  + cleanup option to remove almost everything from previous installation
  
  
  * does only apt-get twice, onmce for requirements and the second one with all packages to install
