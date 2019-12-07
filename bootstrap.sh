@@ -466,7 +466,7 @@ function standard_procedure_cleanup() {
 TEMPLATE="proxy"
 NB_INSTANCES=1
 INSTALL=""
-while getopts "t:m:i:h" opt; do
+while getopts "t:m:i:p:h" opt; do
     case ${opt} in
 	h)
 	    echo "Usage:"
