@@ -40,12 +40,12 @@ function suggest_user () {
 function install_requirements() {
     echo "== Updating software"
     apt-get update
-    apt-get install -y lsb-release apt-transport-tor gpg dirmngr curl
+    apt-get install -y lsb-release apt-transport-tor gpg dirmngr curl netcat
 }
 
 function uninstall_requirements() {
     echo "== Removing software"
-    apt-get remove --purge -y apt-transport-tor dirmngr curl
+    apt-get remove --purge -y apt-transport-tor dirmngr curl netcat
 }
 
 # add official Tor repository and Debian onion service mirrors
@@ -56,9 +56,11 @@ function add_tor_sources() {
 	echo "== Removing previous Tor sources"
 	rm -f $APT_SOURCES_FILE
 	echo "== Adding the official Tor repository"
-	echo "deb tor+http://sdscoq7snqtznauu.onion/torproject.org `lsb_release -cs` main" >> $APT_SOURCES_FILE
+	echo "deb https://deb.torproject.org/torproject.org `lsb_release -cs` main" >> $APT_SOURCES_FILE
 	curl https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --import
 	gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add -
+	apt-get update
+#       sed -i -e 's/deb https\:\/\/deb\.torproject\.org\//deb tor\+http\:\/\/sdscoq7snqtznauu\.onion\//' $APT_SOURCES_FILE
 	if [ "$DISTRO" == "Debian" ]; then
 	    echo "== Switching to Debian's onion service mirrors"
 	    echo "deb tor+http://vwakviie2ienjx6t.onion/debian `lsb_release -cs` main" >> $APT_SOURCES_FILE
