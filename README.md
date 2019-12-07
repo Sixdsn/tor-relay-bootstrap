@@ -25,6 +25,12 @@ To use it, set up a Debian or Ubuntu server, SSH into it, and:
 sudo apt install -y git
 git clone https://github.com/Sixdsn/tor-relay-bootstrap.git
 sudo ./bootstrap.sh
+Usage:
+    -h                      Display this help message.
+    -t TEMPLATE             Select TEMPLATE [proxy|relay|exit|bridge] to use.
+    -i INSTALL              Select INSTALL [toronly|minimal|standard|full|cleanup] profile.
+    -m %d                   Configure multiple instances.
+    -p POSTINST_SCRIPT      Call a post installation script.
 ```
 
 New featues:
@@ -33,7 +39,7 @@ New featues:
   + Install to specify which softwares you want to install and configure [toronly|minimal|standard|full]
   + Number of Tor instances to configure at start (max of 2 is recommended)
   + Post Install script
-  + cleanup option to remove almost everything from previous installation
+  + Cleanup option to remove almost everything from previous installation
  
  
  * does only apt-get twice, onmce for requirements and the second one with all packages to install
