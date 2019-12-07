@@ -437,6 +437,12 @@ function standard_procedure_cleanup() {
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/iptables-persistent/}" )
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/iptables/}" )
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/gpg/}" )
+    for i in "${INSTALL_PACKAGES[@]}"
+    do
+        if [[ $i != "" && `dpkg -l | grep ${i} | wc -l` -eq "0" ]]; then
+            INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/${i}/}" )
+        fi
+    done
     uninstall_packages
     stop_services
     apt-get autoremove --purge
