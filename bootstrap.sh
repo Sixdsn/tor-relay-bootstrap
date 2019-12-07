@@ -48,6 +48,11 @@ function uninstall_requirements() {
     apt-get remove --purge -y apt-transport-tor dirmngr curl netcat
 }
 
+function uninstall_requirements() {
+    echo "== Removing software"
+    apt-get remove --purge -y apt-transport-tor dirmngr curl
+}
+
 # add official Tor repository and Debian onion service mirrors
 function add_tor_sources() {
     DISTRO=$(lsb_release -si)
