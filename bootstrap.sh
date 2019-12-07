@@ -435,7 +435,7 @@ function postinst_script() {
     POSTINST_SCRIPT=$1
 
     echo "== Running PostInst Script ${POSTINST_SCRIPT}"
-    $POSTINST_SCRIPT
+    bash $POSTINST_SCRIPT
 }
 
 function configure_full_cleanup() {
