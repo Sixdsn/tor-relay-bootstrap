@@ -328,7 +328,7 @@ function uninstall_packages() {
 function stop_services() {
     for i in "${STOP_SERVICES[@]}"
     do
-	service $i stop || echo ""
+	service $i stop || echo -n ""
     done
 }
 
