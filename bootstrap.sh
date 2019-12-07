@@ -434,6 +434,8 @@ function standard_procedure_cleanup() {
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/apparmor-profiles/}" )
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/apparmor-utils/}" )
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/apparmor/}" )
+    INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/iptables-persistent/}" )
+    INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/iptables/}" )
     uninstall_packages
     stop_services
     apt-get autoremove --purge
