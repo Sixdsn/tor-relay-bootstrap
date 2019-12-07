@@ -45,7 +45,7 @@ function install_requirements() {
 
 function uninstall_requirements() {
     echo "== Removing software"
-    apt-get remove --purge -y apt-transport-tor gpg dirmngr curl
+    apt-get remove --purge -y apt-transport-tor dirmngr curl
 }
 
 # add official Tor repository and Debian onion service mirrors
@@ -436,6 +436,7 @@ function standard_procedure_cleanup() {
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/apparmor/}" )
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/iptables-persistent/}" )
     INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/iptables/}" )
+    INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/gpg/}" )
     uninstall_packages
     stop_services
     apt-get autoremove --purge
