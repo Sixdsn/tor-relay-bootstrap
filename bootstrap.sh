@@ -45,7 +45,7 @@ function install_requirements() {
 
 function uninstall_requirements() {
     echo "== Removing software"
-    apt-get remove --purge -y lsb-release apt-transport-tor gpg dirmngr curl
+    apt-get remove --purge -y apt-transport-tor gpg dirmngr curl
 }
 
 # add official Tor repository and Debian onion service mirrors
@@ -321,7 +321,7 @@ function uninstall_packages() {
 function stop_services() {
     for i in "${STOP_SERVICES[@]}"
     do
-	service $i stop
+	service $i stop || echo ""
     done
 }
 
@@ -430,8 +430,13 @@ function configure_full_cleanup() {
 }
 
 function standard_procedure_cleanup() {
+    INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/openssh-server/}" )
+    INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/apparmor-profiles/}" )
+    INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/apparmor-utils/}" )
+    INSTALL_PACKAGES=( "${INSTALL_PACKAGES[@]/apparmor/}" )
     uninstall_packages
     stop_services
+    apt-get autoremove --purge
 }
 
 
@@ -473,28 +478,34 @@ fi
 
 check_root
 suggest_user 
-install_requirements
-add_tor_sources
 
 case "$INSTALL" in
     toronly)
+	install_requirements
+	add_tor_sources
 	register_install_toronly
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_toronly $NB_INSTANCES
 	;;
 
     minimal)
+	install_requirements
+	add_tor_sources
 	register_install_minimal
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_minimal $NB_INSTANCES
 	;;
 
     standard)
+	install_requirements
+	add_tor_sources
 	register_install_standard
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_standard $NB_INSTANCES
 	;;
     full)
+	install_requirements
+	add_tor_sources
 	register_install_full
 	standard_procedure $TEMPLATE $NB_INSTANCES
 	configure_full $NB_INSTANCES
@@ -502,8 +513,9 @@ case "$INSTALL" in
     cleanup)
 	register_install_full
 	standard_procedure_cleanup
-	configure_cleanup
+	configure_full_cleanup
 	exit 0
+	;;
     *)
         echo "Invalid Install: -$OPTARG" 1>&2
         exit 1
